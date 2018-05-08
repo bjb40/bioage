@@ -33,7 +33,7 @@ install_github('bjb40/bioage')
 
 
 
-Citation
+Description of Algorithm:
 
-Klemera P, Doubal S. 2006. A new approach to the concept and computation of biological age. **Mechanisms of Ageing and Development.** 127(3):240-48
+Klemera P, Doubal S. 2006. A new approach to the concept and computation of biological age. *Mechanisms of Ageing and Development.* 127(3):240-48
 
