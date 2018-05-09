@@ -24,6 +24,10 @@ kdm_calc(data, agevar, biomarkers, fit = NULL, link = "linear",
 
 \item{controls}{A character vector indicating control variables (if any) to be used for calculating biological age.}
 }
+\value{
+An object of class 'kdm'. This object is a list with two elements (data and fit),
+and two methods (extract_data and extract_fit).
+}
 \description{
 Calculate biological ages in a dataset.
 }
@@ -38,6 +42,6 @@ biocalc = kdm_calc(data,agevar='age',
   biomarkers=c('sysbp','totchol','bun','cmv','mcv'),
   fit=train$fit)
 
-#combine biological ages and training data
+#combine biological ages calculated using training parameters
 data$bioage = extract_data(biocalc)[,'bioage']
 }

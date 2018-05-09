@@ -50,7 +50,7 @@ weighted.var = function(vector,weights){
 #' @param s_ba2 A particular fit parameter. Advanced users can modify this parameter to control the variance of biological age. If left NULL, defaults are used.
 #' @param weightvar A character vector indicating survey weights. If supplied, a weighted regression is conducted. If not, weights are not used.
 #' @param controls A character vector indicating control variables (if any) to be used for calculating biological age.
-#' @returns An object of kdm_calc. This object is a list with two elements (data and fit),
+#' @return An object of class 'kdm'. This object is a list with two elements (data and fit),
 #' and two methods (extract_data and extract_fit).
 #' @examples
 #' #(not run)
@@ -63,7 +63,7 @@ weighted.var = function(vector,weights){
 #'   biomarkers=c('sysbp','totchol','bun','cmv','mcv'),
 #'   fit=train$fit)
 #'
-#' #combine biological ages and training data
+#' #combine biological ages calculated using training parameters
 #' data$bioage = extract_data(biocalc)[,'bioage']
 kdm_calc = function(data,
                     agevar,
@@ -207,17 +207,35 @@ kdm_calc = function(data,
   train$s2 = s2
   train$s_ba2 = s_ba2
 
-  return(
-    list(data = train, fit = fit)
-  )
+  kdm = list(data = train, fit = fit)
+  class(kdm) = append(class(kdm),'kdm')
+
+  return(kdm)
 
 }
 
-#extraction functions for dataframe of fit object
-
+#' Extracts and summarizes estimates for fitting biological age from a kdm object.
+#'
+#' @param kdmobj A kdm object estimated using the function kdm_calc.
+#' @return A dataframe with trained parameters.
+#' @examples
+#' #(not run)
+#' #Train biological age parameters
+#' train = kdm_calc(nhanes,agevar='age',
+#'   biomarkers=c('sysbp','totchol','bun','cmv','mcv'))
+#'
+#' myfit = extract_fit(train)
 extract_fit = function(kdmobj){
-  #kdmobj is  trained set
-  #returns dataframe
+  useMethod('extract_fit',kdmobj)
+}
+
+#' @export
+extract_fit.default = function(kdmobj){
+  cat('\nError: Must use kdm object generated from kdm_calc.')
+}
+
+#' @export
+extract_fit.kdm = function(kdmobj){
 
   fit = kdmobj$fit$agev
   fit$s_r = kdmobj$fit$s_r
@@ -229,7 +247,27 @@ extract_fit = function(kdmobj){
   return(fit)
 }
 
+
+#' Extracts dataframe with age, controls, biomarkers, and biological age calculation from trianed data (using kdm_calc function).
+#'
+#' @param kdmobj A kdm object estimated using the function kdm_calc.
+#' @return A dataframe with parameters and biological age.
+#' @examples
+#' #(not run)
+#' #Train biological age parameters
+#' train = kdm_calc(nhanes,agevar='age',
+#'   biomarkers=c('sysbp','totchol','bun','cmv','mcv'))
+#'
+#' newdata = extract_data(train)
 extract_data = function(kdmobj){
+  useMethod('extract_data',kdmobj)
+}
+
+extract_data.default = function(kdmobj){
+  cat('\nError: Must use kdm object generated from kdm_calc.')
+}
+
+extract_data.kdm = function(kdmobj){
   #kdmobj is  trained set
   #returns dataframe and prints to csv
 

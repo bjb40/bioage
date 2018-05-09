@@ -38,10 +38,13 @@ biocalc = kdm_calc(data,agevar='age',
 
 #combine biological ages and training data
 data$bioage = extract_data(biocalc)[,'bioage']
-
 ```
 
+After installing, you can view a more detailed vignette using the following code, and clicking on the HTML result.
 
+```
+browseVignettes('bioage')
+```
 
 Description of Algorithm:
 

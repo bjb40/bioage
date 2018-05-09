@@ -1,0 +1,51 @@
+---
+title: "Biological Age Training Example"
+author: "Bryce Bartlett"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\Biological Age Training Example{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This vignette (1) uses the NHANES package to download publicly curated data with biomarkers; (2) splits the data in half for a training and validation set. Once the data is prepared, it uses the bioage package to (1) train biological age on the training subset; and (2) uses the estimated fit to calculate biological age for the test data.
+
+## Gathering Data
+
+This vignette uses the package nhanesA (not developed or associated with the bioage package) to draw publicly available data collected by the US Governemnt's National Health and Nutrition Survey. 
+
+```{r}
+#load library
+library(nhanesA)
+
+#draw demographic information 
+
+
+#draw labs
+
+
+#perform
+
+
+```
+
+
+## Splitting the Data.
+
+```{r}
+
+```
+
+## Using the bioage package to train the data.
+
+```{r}
+
+```
+
+## Using trained data to estimate out-of-sample biological ages.
+
+```{r}
+
+```
+

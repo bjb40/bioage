@@ -6,7 +6,7 @@ Author: Bryce Bartlett
 Maintainer: Bryce Bartlett <bryce.bartlett@duke.edu>
 Description: This package uses the Klemera-Doubal biologocal age algorithm to estimate biological ages from biomarkers.
     The package also contains estimators from the National Health and Nutrition Examination Survey (NHANES) for 11 biomarkers that can be used to estimate biological age.
-License: What license is it under?
+License: cc0
 Encoding: UTF-8
 LazyData: true
 Imports:
@@ -15,3 +15,7 @@ Imports:
   dplyr,
   reshape2
 RoxygenNote: 6.0.1
+Suggests: knitr,
+    rmarkdown,
+    nhanesA
+VignetteBuilder: knitr
