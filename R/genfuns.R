@@ -4,16 +4,6 @@
 #Functions/objects
 #@@@@@@@@@@@@@@@@@@@@@
 
-#libraries
-require(survey)
-library(reshape2)
-library(ggplot2)
-library(survey)
-library(dplyr)
-library(survival)
-library(survminer)
-library(knitr)
-
 
 rnd = function(db,rd){
   # rounds input to preserve leading zeros
@@ -56,8 +46,3 @@ mnsd = function(x){
   )#end return
 }
 
-
-
-#@@@@@@@@@@@@@@@
-#Algorithm Functions
-#@@@@@@@@@@@@@@@

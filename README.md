@@ -27,7 +27,17 @@ install_github('bjb40/bioage')
 
 
 ```
-#forthcoming
+#Train biological age parameters
+train = kdm_calc(nhanes,agevar='age',
+  biomarkers=c('sysbp','totchol','bun','cmv','mcv'))
+
+#Use training data to calculate out-of-sample biological ages 
+biocalc = kdm_calc(data,agevar='age',
+  biomarkers=c('sysbp','totchol','bun','cmv','mcv'),
+  fit=train$fit)
+
+#combine biological ages and training data
+data$bioage = extract_data(biocalc)[,'bioage']
 
 ```
 

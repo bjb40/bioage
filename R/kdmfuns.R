@@ -6,8 +6,7 @@ form = function(y,x){
   return(as.formula(paste0(y,'~',x)))
 }
 
-#run linear regression on biomarkers; returns lists
-
+#helper function to get effects from linear models on biomarkers
 get_effs = function(mod){
   #input model object
   #output is list of
@@ -29,7 +28,6 @@ get_effs = function(mod){
 }
 
 ####extend caclculations below to dataset...
-
 weighted.var = function(vector,weights){
   #https://stats.stackexchange.com/questions/51442/weighted-variance-one-more-time
   #frequency weights... (vs. reliability weights?)
@@ -42,7 +40,31 @@ weighted.var = function(vector,weights){
 
 }
 
-
+#' Calculate biological ages in a dataset.
+#'
+#' @param data The dataset for calculating biological age.
+#' @param agevar A character vector (length=1) indicating the name of the varialbe for age.
+#' @param biomarkers A character vector indicating the names of the variables for the biomarkers to use in calculating biological age.
+#' @param fit An S3 object for model fit. If the value is NULL, then the parameters to use for training biological age are calculated.
+#' @param link "linear" is default and based on the original KDM algorithm; experimental use of log-linear link (use "log") is available for advanced users.
+#' @param s_ba2 A particular fit parameter. Advanced users can modify this parameter to control the variance of biological age. If left NULL, defaults are used.
+#' @param weightvar A character vector indicating survey weights. If supplied, a weighted regression is conducted. If not, weights are not used.
+#' @param controls A character vector indicating control variables (if any) to be used for calculating biological age.
+#' @returns An object of kdm_calc. This object is a list with two elements (data and fit),
+#' and two methods (extract_data and extract_fit).
+#' @examples
+#' #(not run)
+#' #Train biological age parameters
+#' train = kdm_calc(nhanes,agevar='age',
+#'   biomarkers=c('sysbp','totchol','bun','cmv','mcv'))
+#'
+#' #Use training data to calculate out-of-sample biological ages
+#' biocalc = kdm_calc(data,agevar='age',
+#'   biomarkers=c('sysbp','totchol','bun','cmv','mcv'),
+#'   fit=train$fit)
+#'
+#' #combine biological ages and training data
+#' data$bioage = extract_data(biocalc)[,'bioage']
 kdm_calc = function(data,
                     agevar,
                     biomarkers,

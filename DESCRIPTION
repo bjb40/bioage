@@ -1,11 +1,17 @@
 Package: bioage
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Klemera-Doubal biological age algorithm.
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Author: Bryce Bartlett
+Maintainer: Bryce Bartlett <bryce.bartlett@duke.edu>
+Description: This package uses the Klemera-Doubal biologocal age algorithm to estimate biological ages from biomarkers.
+    The package also contains estimators from the National Health and Nutrition Examination Survey (NHANES) for 11 biomarkers that can be used to estimate biological age.
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
+Imports:
+  survey,
+  ggplot2,
+  dplyr,
+  reshape2
+RoxygenNote: 6.0.1
