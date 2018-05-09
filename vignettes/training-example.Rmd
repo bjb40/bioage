@@ -13,39 +13,125 @@ This vignette (1) uses the NHANES package to download publicly curated data with
 
 ## Gathering Data
 
-This vignette uses the package nhanesA (not developed or associated with the bioage package) to draw publicly available data collected by the US Governemnt's National Health and Nutrition Survey. 
+This vignette uses the package nhanesA (not developed or associated with the bioage package) to draw publicly available data collected by the US Governemnt's National Health and Nutrition Survey (NHANES).
 
-```{r}
-#load library
-library(nhanesA)
+As noted in the code comments, this vignette uses the unassociated (but excellent) library, "nhanesA". 
 
-#draw demographic information 
+```{r, warning=FALSE,message=FALSE}
+#load library to pull nhanes data
+#nhanesA is a nonaffiliated library, but is connected to a 
+#commonly used repository that contains
+#biomarkers
+library(nhanesA) 
 
+#draw standard biochemestry profile from NHANES 2001-2002 
+#the excelelnet nhanesA library has information on how to 
+#select and identify variables
+nhdata = nhanes('L40_B')
 
-#draw labs
+#merge this with demographic data, which includes age
+#SEQN is the individual identifier for nhanes data
+nhdata = merge(nhdata,nhanes('DEMO_B'),by='SEQN')
 
-
-#perform
-
+#Subset the data
+#here is a peak at the data, including 
+#the sequence number, select biomarkers, and gender
+print(head(nhdata[,c('SEQN',#sequence number
+                     'LBXSAL', #Albumin
+                     'RIAGENDR', #sex
+                     'RIDAGEYR' #age (in years)
+                     )]))
 
 ```
 
 
 ## Splitting the Data.
 
-```{r}
+In this section I split the 2002 NHANES data to illustrate both how to train data, and how to use estimated parameters to generate out-of-sample biological age values.
 
+```{r, results='hide',warning=FALSE,message=FALSE}
+#select the first 1/2 of the data
+train = nhdata[1:ceiling(nrow(nhdata)/2),]
+#put the rest of the data in validation dataset
+validate = nhdata[!nhdata$SEQN %in% train$SEQN,]
 ```
 
 ## Using the bioage package to train the data.
 
-```{r}
+To train and validate the data, I use 5 biomarkers as oultined below:
 
+|Variable Name|Description|
+|:------------|:----------|
+|LBXSAL|Albumin (g/dL)|
+|LBDSAPSI|Alkaline Phosphate (U/L)|
+|LBXSBU|Blood Urea Nitrogen (mg/dL)|
+|LBXSCH|Cholesterol (mg/dL)|
+|LBDSCR|Creatnine (mg/dL)|
+
+**Note:** While this example includes individuals of all ages and pregnant women, this approach will likely give poor results for biological age. Researchers should therefore exclude these individuals in their analysis.
+
+```{r, results='hide',warning=FALSE,message=FALSE}
+
+library(bioage)
+
+kdmtrain = kdm_calc(data=train,
+                    agevar='RIDAGEYR',
+                    biomarkers=c('LBXSAL','LBDSAPSI','LBXSBU',
+                                 'LBXSCH','LBDSCR')
+  
+)
+ 
+
+```
+
+With the trained data, we can export the training parameters as a dataset, or extract the trained dataset.
+
+The biological age variable is named as the concatenation of agevar with the prefix of 'bio'. 
+
+Since the agevar is "RIDAGEYR", the calculated biological age is 'bioRIDAGEYR'. Here is a peak at the data with the biological age variable:
+
+```{r}
+newdata = extract_data(kdmtrain)
+
+print(head(newdata[,c('SEQN',#sequence number
+                     'LBXSAL', #Albumin
+                     'RIAGENDR', #sex
+                     'RIDAGEYR', #age (in years)
+                     'bioRIDAGEYR' #biological age
+                     )]))
+```
+
+We can also extract and print the parameters for the KDM algorithm. These parameters have special meanings relative to the algorithm as explained in papers discussing biological aging.
+
+```{r}
+params = extract_fit(kdmtrain)
+print(params)
 ```
 
 ## Using trained data to estimate out-of-sample biological ages.
 
+Finall, we can use the trained parameters to estimate biological ages for out of sample data. For this, the kdm_calc fucntion needs to be given training data, as follows:
+
 ```{r}
+
+kdmvalidate = kdm_calc(data=validate,
+                    agevar='RIDAGEYR',
+                    biomarkers=c('LBXSAL','LBDSAPSI','LBXSBU',
+                                 'LBXSCH','LBDSCR'),
+                    fit=kdmtrain$fit #this argument supplies the fit
+                    )
+
+#the same functions apply as to the trianing data
+new_validate = extract_data(kdmvalidate)
+
+print(head(new_validate[,c('SEQN',#sequence number
+                     'LBXSAL', #Albumin
+                     'RIAGENDR', #sex
+                     'RIDAGEYR', #age (in years)
+                     'bioRIDAGEYR' #biological age
+                     )]))
+
+
 
 ```
 

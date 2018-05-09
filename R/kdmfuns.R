@@ -75,6 +75,8 @@ kdm_calc = function(data,
                     controls=NULL){
 
   require(survey)
+  require(dplyr)
+  require(reshape2)
 
   #fit is a list an object from previously trained data used to fit
   #if null, it trains; otherwise calcs
@@ -226,7 +228,7 @@ kdm_calc = function(data,
 #'
 #' myfit = extract_fit(train)
 extract_fit = function(kdmobj){
-  useMethod('extract_fit',kdmobj)
+  UseMethod('extract_fit',kdmobj)
 }
 
 #' @export
@@ -260,7 +262,7 @@ extract_fit.kdm = function(kdmobj){
 #'
 #' newdata = extract_data(train)
 extract_data = function(kdmobj){
-  useMethod('extract_data',kdmobj)
+  UseMethod('extract_data',kdmobj)
 }
 
 extract_data.default = function(kdmobj){
