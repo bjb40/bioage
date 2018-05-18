@@ -9,7 +9,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-This vignette (1) uses the NHANES package to download publicly curated data with biomarkers; (2) splits the data in half for a training and validation set. Once the data is prepared, it uses the bioage package to (1) train biological age on the training subset; and (2) uses the estimated fit to calculate biological age for the test data.
+This vignette (1) uses the NHANES package to download publicly curated data with biomarkers; and (2) splits the data in half for a training and validation set. Once the data is prepared, it uses the bioage package to (1) train biological age on the training subset; and (2) uses the estimated fit to calculate biological age for the test data.
 
 ## Gathering Data
 
@@ -33,12 +33,9 @@ nhdata = nhanes('L40_B')
 #SEQN is the individual identifier for nhanes data
 nhdata = merge(nhdata,nhanes('DEMO_B'),by='SEQN')
 
-#Subset the data
-#here is a peak at the data, including 
-#the sequence number, select biomarkers, and gender
-print(head(nhdata[,c('SEQN',#sequence number
-                     'LBXSAL', #Albumin
-                     'RIAGENDR', #sex
+#show data
+print(head(nhdata[,c('LBXSAL','LBDSAPSI','LBXSBU',
+                                 'LBXSCH','LBDSCR', #biomarkers
                      'RIDAGEYR' #age (in years)
                      )]))
 
@@ -93,9 +90,8 @@ Since the agevar is "RIDAGEYR", the calculated biological age is 'bioRIDAGEYR'. 
 ```{r}
 newdata = extract_data(kdmtrain)
 
-print(head(newdata[,c('SEQN',#sequence number
-                     'LBXSAL', #Albumin
-                     'RIAGENDR', #sex
+print(head(newdata[,c('LBXSAL','LBDSAPSI','LBXSBU',
+                                 'LBXSCH','LBDSCR', #biomarkers
                      'RIDAGEYR', #age (in years)
                      'bioRIDAGEYR' #biological age
                      )]))
@@ -124,9 +120,8 @@ kdmvalidate = kdm_calc(data=validate,
 #the same functions apply as to the trianing data
 new_validate = extract_data(kdmvalidate)
 
-print(head(new_validate[,c('SEQN',#sequence number
-                     'LBXSAL', #Albumin
-                     'RIAGENDR', #sex
+print(head(new_validate[,c('LBXSAL','LBDSAPSI','LBXSBU',
+                                 'LBXSCH','LBDSCR', #biomarkers
                      'RIDAGEYR', #age (in years)
                      'bioRIDAGEYR' #biological age
                      )]))
@@ -134,4 +129,8 @@ print(head(new_validate[,c('SEQN',#sequence number
 
 
 ```
+
+
+
+
 

@@ -45,6 +45,7 @@ weighted.var = function(vector,weights){
 #' @param data The dataset for calculating biological age.
 #' @param agevar A character vector (length=1) indicating the name of the varialbe for age.
 #' @param biomarkers A character vector indicating the names of the variables for the biomarkers to use in calculating biological age.
+#' @param filter a list with biomarker names that identifies any restrictions in TRAINING
 #' @param fit An S3 object for model fit. If the value is NULL, then the parameters to use for training biological age are calculated.
 #' @param link "linear" is default and based on the original KDM algorithm; experimental use of log-linear link (use "log") is available for advanced users.
 #' @param s_ba2 A particular fit parameter. Advanced users can modify this parameter to control the variance of biological age. If left NULL, defaults are used.
@@ -69,6 +70,7 @@ kdm_calc = function(data,
                     agevar,
                     biomarkers,
                     fit=NULL,
+                    filter=NULL,
                     link='linear',
                     s_ba2=NULL,
                     weightvar=NULL,
@@ -85,6 +87,15 @@ kdm_calc = function(data,
 
   train=data; rm(data)
   bm = biomarkers
+
+  #identifying filter
+  #need to add some tests to filter to capture errors for mis-specification
+  if(is.null(filter)){
+    filter = vector("list",length(bm))
+    names(filter) = bm
+  } else {
+
+  }
 
   if(is.null(weightvar)){
     train$w = rep(1,nrow(train))
@@ -104,7 +115,10 @@ kdm_calc = function(data,
 
     if(link=='linear'){
       lm_age = lapply(bm,function(marker)
-        svyglm(form(marker,iv),design=design,family=gaussian()))
+        svyglm(form(marker,iv),
+               design=design,
+               subset = NULL#parse(text=filter[[marker]]),
+               family=gaussian()))
     } else if(link=='log'){
       lm_age = lapply(bm,function(marker) glm(form(marker,iv), data=train,
                                               family = quasipoisson(link=log)))
@@ -192,6 +206,9 @@ kdm_calc = function(data,
   train$bioage = unlist(
     (ba.e_n + (train$agevar/c(s_ba2)))/(ba.e_d+(1/c(s_ba2)))
   )
+
+  #set to missing if more than 2 missing
+  train$bioage = ifelse(ba.nmiss>2,NA,train$bioage)
 
   #  train = train %>%
   #    mutate(bioage = ((ba.e_n)+(agevar/s.ba2))/((ba.e_d)+ (1/s.ba2))) %>%
