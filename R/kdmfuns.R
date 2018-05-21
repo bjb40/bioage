@@ -117,7 +117,7 @@ kdm_calc = function(data,
       lm_age = lapply(bm,function(marker)
         svyglm(form(marker,iv),
                design=design,
-               subset = NULL#parse(text=filter[[marker]]),
+               subset = NULL,#parse(text=filter[[marker]])
                family=gaussian()))
     } else if(link=='log'){
       lm_age = lapply(bm,function(marker) glm(form(marker,iv), data=train,
