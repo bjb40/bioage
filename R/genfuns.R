@@ -46,3 +46,13 @@ mnsd = function(x){
   )#end return
 }
 
+#standardizes variables
+stdize = function(x){
+  #return standardized variable
+  #x is a vector
+  #output is to return a standardized output
+
+  return((x-mean(x,na.rm=TRUE))/sd(x,na.rm=TRUE))
+
+}
+

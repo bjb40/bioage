@@ -50,7 +50,7 @@ For biomarkers we truncate the biomarkers by eliminating any observations that f
 
 ```should probably id units for the biomarkers```
 
-|Variable|Description|Training Limitations, if Any|
+|Variable|Description|Additional Training Limitations, if Any|
 |:-------|:----------|:---------------------------|
 |seqn|Unique individual identifier||
 |samp    |Dummy varialbe series for NHANES sample year; reference is "nhanes3"||
@@ -100,7 +100,7 @@ female.est = kdm_calc(data=train %>% filter(sex==1),
                                      'lnua','sbp','hba1c','totchol','cmv'),
                       filter=list(albumin='age>=45',
                                   lymphpct='age>=45',
-                                  totchol='age>=45 & age<=55'))
+                                  totchol='age>=30 & age<=55'))
 
 male.est = kdm_calc(data=train %>% filter(sex==2),
                         agevar='age',
@@ -110,7 +110,7 @@ male.est = kdm_calc(data=train %>% filter(sex==2),
                                      'lnua','sbp','hba1c','totchol','cmv'),
                       filter=list(albumin='age>=45',
                                   lymphpct='age>=45',
-                                  totchol='age>=45 & age<=55'))
+                                  totchol='age>=30 & age<=55'))
 
 
 ```
