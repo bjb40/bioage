@@ -4,8 +4,8 @@
 \alias{kdm_calc}
 \title{Calculate biological ages in a dataset.}
 \usage{
-kdm_calc(data, agevar, biomarkers, fit = NULL, link = "linear",
-  s_ba2 = NULL, weightvar = NULL, controls = NULL)
+kdm_calc(data, agevar, biomarkers, fit = NULL, filter = NULL,
+  link = "linear", s_ba2 = NULL, weightvar = NULL, controls = NULL)
 }
 \arguments{
 \item{data}{The dataset for calculating biological age.}
@@ -15,6 +15,8 @@ kdm_calc(data, agevar, biomarkers, fit = NULL, link = "linear",
 \item{biomarkers}{A character vector indicating the names of the variables for the biomarkers to use in calculating biological age.}
 
 \item{fit}{An S3 object for model fit. If the value is NULL, then the parameters to use for training biological age are calculated.}
+
+\item{filter}{a list with biomarker names that identifies any restrictions in training data. See vignette or data description for example of use.}
 
 \item{link}{"linear" is default and based on the original KDM algorithm; experimental use of log-linear link (use "log") is available for advanced users.}
 

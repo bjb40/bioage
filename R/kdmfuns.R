@@ -45,7 +45,7 @@ weighted.var = function(vector,weights){
 #' @param data The dataset for calculating biological age.
 #' @param agevar A character vector (length=1) indicating the name of the varialbe for age.
 #' @param biomarkers A character vector indicating the names of the variables for the biomarkers to use in calculating biological age.
-#' @param filter a list with biomarker names that identifies any restrictions in TRAINING
+#' @param filter a list with biomarker names that identifies any restrictions in training data. See vignette or data description for example of use.
 #' @param fit An S3 object for model fit. If the value is NULL, then the parameters to use for training biological age are calculated.
 #' @param link "linear" is default and based on the original KDM algorithm; experimental use of log-linear link (use "log") is available for advanced users.
 #' @param s_ba2 A particular fit parameter. Advanced users can modify this parameter to control the variance of biological age. If left NULL, defaults are used.
@@ -94,7 +94,10 @@ kdm_calc = function(data,
     filter = vector("list",length(bm))
     names(filter) = bm
   } else {
-
+    leftout = bm[!bm %in% names(filter)]
+    nl = vector('list',length(leftout))
+    names(nl) = leftout
+    filter = c(filter,nl); #rm(leftout,nl)
   }
 
   if(is.null(weightvar)){
@@ -104,7 +107,19 @@ kdm_calc = function(data,
     train$w = unlist(train[,weightvar])
   }
 
-  design=svydesign(id=~1,weights=~w,data=train)
+  #identify filter conditions
+
+  train2 = train
+  for(l in seq_along(filter)){
+
+    if(is.null(filter[[l]])){next} else{
+      lim=with(train,eval(parse(text=filter[[l]])))
+      train2[lim,names(filter)] = NA
+    }
+
+  }
+
+  design=svydesign(id=~1,weights=~w,data=train2)
 
 
   #pull the calculations out to make fit more general??
@@ -114,11 +129,12 @@ kdm_calc = function(data,
   if(is.null(fit)){
 
     if(link=='linear'){
-      lm_age = lapply(bm,function(marker)
+      lm_age = lapply(bm,function(marker){
+        subset = eval(filter,1)[[marker]]
         svyglm(form(marker,iv),
                design=design,
-               subset = NULL#parse(text=filter[[marker]]),
-               family=gaussian()))
+               family=gaussian())
+        })
     } else if(link=='log'){
       lm_age = lapply(bm,function(marker) glm(form(marker,iv), data=train,
                                               family = quasipoisson(link=log)))
@@ -160,12 +176,11 @@ kdm_calc = function(data,
   }
 
   #allow for proration of biological ages
+  #based on missing data -- fill this out in text
   ba.nmiss = apply(n1,1,function(x) sum(is.na(x)))
   ba.obs = length(bm) - ba.nmiss
   ba.e_n = rowSums(n1,na.rm=TRUE)
   ba.e_d = sum(agev$n2,na.rm=TRUE)
-
-  #prorate here or not...?
 
   train = train %>%
     mutate(ba.eo = ba.e_n/ba.e_d,
