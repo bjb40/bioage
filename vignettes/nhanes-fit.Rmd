@@ -1,0 +1,191 @@
+---
+title: "Creation of NHANES-Fit Biological Age Parameters"
+author: "Bryce Bartlett"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\Creation of NHANES-Fit Biological Age Parameters{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message=FALSE)
+```
+
+## Overview
+
+This vignette serves as an example of training biological aging parameters using the NHANES dataset. It also provides documentation for fit parameters contained in the bioage package.
+
+## Data
+
+For these data, we use NHANES datasets from 1994 to 2018. We train in the full NHANES, but project bioage into 50% of the nhanes3 sample. NHANES is a dataset which has been produce by 
+
+These data were merged and loaded as the dataset "nhanes". Here are the depenencies:
+
+```{r}
+library(dplyr)
+library(bioage) #beta version currently -- topic of vignette
+```
+
+
+```{r, echo=FALSE}
+#This codeblock loads data from my local machine that has previously been downloaded and cleane. The Original data is not available.
+library(haven)
+nhanes = read_dta('C:/Users/bjb40/Box Sync/Bartlett_BioAge/Data/nhanes/Stata/NHANESforBA.dta')
+
+##limit by excluding pregnant woman and constraining the ages
+nhanes = nhanes %>%
+  filter(pregnant==0,
+         age>=30, age<=75) %>%
+  mutate(seqn=ifelse(samp=='nhanes3',paste0('33333',seqn),seqn)) #liminate duplicate sequence numbers
+
+```
+
+### Training Selections and Biomarkers
+ 
+We train on biological separately for men and women, using all individuals between 30 and 75 years old, excluding pregnant women. We use the year of coding as a covariate (in a dummy variable series).
+
+For biomarkers we truncate the biomarkers by eliminating any observations that fall outside of ```Dan edited; need his input```. We also limit the training on certain biomarkers as described in the table below.
+
+```should probably id units for the biomarkers```
+
+|Variable|Description|Training Limitations, if Any|
+|:-------|:----------|:---------------------------|
+|seqn|Unique individual identifier||
+|samp    |Dummy varialbe series for NHANES sample year; reference is "nhanes3"||
+|age|chronological age|
+|sex|gender (1=female; 2=male)||
+|**Biomarkers**||
+|albumin|Albumin|limited to ages 45-75|
+|lnalp|Alkaline Phosphate (log)||
+|bun|Blood Urea Nitrogen||
+|cmv|CMV||  
+|lncreat|Creatinine (log)||
+|lncrp|CRP (log)||
+|hba1c|Glycalated Hemoglobin (%)||
+|lymphpct|Lymphocite Percent|limited to ages 45-75|
+|lnwbc|White Blood Cell Count (log)||
+|lnua|Uric Acid (log)||
+|sbp|Systolic Blood Pressure||
+|mcv|Mean Corpuscular Volume||
+|totchol|Total Cholesterol|limited to ages 30-55|
+
+We prepare the holdout sample by extracting 1/2 of the individuals from nhanes3.
+
+```{r}
+#pull list of ids and randomly sample 1/2 of them
+ids = nhanes$seqn[nhanes$samp=='nhanes3']
+holdout.ids = sample(ids,size=round(length(ids)/2),replace=FALSE)
+#generate holdout dataset
+holdout = filter(nhanes,seqn %in% holdout.ids)
+train = filter(nhanes,!seqn %in% holdout.ids)
+rm(ids,holdout.ids,nhanes)
+```
+We esitmate biologial age parameters separately for men and women by using the "kdm_calc" function of the bioage package (type "?kdm_calc" for help information).
+
+```{r}
+#set sample control to nahnes3
+#this centers estimates for years coinciding with nhanes3
+train$samp = factor(train$samp)
+train$samp = relevel(train$samp,ref='nhanes3')
+
+#generate biological age estimates
+
+female.est = kdm_calc(data=train %>% filter(sex==1),
+                        agevar='age',
+                        controls='samp',
+                        biomarkers=c('albumin','lnalp','bun','lncreat',
+                                     'lncrp','lymphpct','mcv','lnwbc',
+                                     'lnua','sbp','hba1c','totchol','cmv'),
+                      filter=list(albumin='age>=45',
+                                  lymphpct='age>=45',
+                                  totchol='age>=45 & age<=55'))
+
+male.est = kdm_calc(data=train %>% filter(sex==2),
+                        agevar='age',
+                        controls='samp',
+                        biomarkers=c('albumin','lnalp','bun','lncreat',
+                                     'lncrp','lymphpct','mcv','lnwbc',
+                                     'lnua','sbp','hba1c','totchol','cmv'),
+                      filter=list(albumin='age>=45',
+                                  lymphpct='age>=45',
+                                  totchol='age>=45 & age<=55'))
+
+
+```
+
+The estimates above are saved as part of the data structure (although the data projected is set to NULL). These estimates can be drawn by typing ```data(male.est)``` or ```data(female.est)``` as the case may be.
+
+Using these estimates, biological ages are projecte into the holdout sample by running ```kdm_calc``` again, but supplying a ```fit``` argument. In this case, the ```filter``` argument is meaningless, because we are not training parameters, so it is excluded.
+
+```{r}
+
+female.project = kdm_calc(data=holdout %>% filter(sex==1),
+                        agevar='age',
+                        controls='samp',
+                        biomarkers=c('albumin','lnalp','bun','lncreat',
+                                     'lncrp','lymphpct','mcv','lnwbc',
+                                     'lnua','sbp','hba1c','totchol','cmv'),
+                        fit=female.est$fit)
+
+male.project = kdm_calc(data=holdout %>% filter(sex==2),
+                        agevar='age',
+                        controls='samp',
+                        biomarkers=c('albumin','lnalp','bun','lncreat',
+                                     'lncrp','lymphpct','mcv','lnwbc',
+                                     'lnua','sbp','hba1c','totchol','cmv'),
+                        fit=male.est$fit)
+
+#######
+#pull the full dataset using the extract data command; 
+#type ?extract_data for more information
+
+holdout.withba = rbind(extract_data(female.project),
+                       extract_data(male.project))
+
+
+```
+Using the projected data, we can use the newly created variable ```bioage`` however we want. Such as identifying a scatterplot and correlation:
+
+```{r}
+library(ggplot2)
+
+ggplot(holdout.withba,
+       aes(x=bioage,y=age,color=factor(sex),shape=factor(sex))) +
+  geom_point(alpha=0.2) +
+  ylim(20,90) + xlim(20,90) +
+  geom_smooth(method='lm') +
+  theme_classic()
+  
+
+```
+
+
+For those wishing to use other statistical programs for analyzing biological age, I suggest the package ```haven``` from the ```tidyverse```. For example,  the following code could be used to read a training and projection dataset from stata, project biological age, and then resave to stata. (This is pseudo-code; replace "file" with the appropriate quoted string).
+
+```
+library(haven)
+
+#estimate kdm parameters
+training=read_dta(train.file)
+train.est = kdm_calc(data=training,
+                      agevar='age',
+                      biomarkers=c('bm1','bm2')
+                      )
+
+#use kdm parameters
+projection=read_dta(projection.file)
+projection.results = kdm_calc(data=projection,
+                                agevar='age',
+                                biomarkers=c('bm1','bm2'),
+                                fit=train.est$fit)
+
+#save to stata for further processing
+write_dta(new.projection.file)
+
+```
+
+
+
+
