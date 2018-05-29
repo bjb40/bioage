@@ -71,7 +71,7 @@ filter.female = list(
               crp = 'crp<2'
               )
 
-hdtrain.female = hd(nhanes %>% filter(age>=18 & age<=35 & sex ==1),
+hdtrain.female = hd(nhanes %>% filter(age>=20 & age<=30 & sex ==1),
             biomarkers=biomarkers,
             filter=filter.female)
 

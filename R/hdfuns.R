@@ -53,9 +53,12 @@ hd = function(data,biomarkers,fit=NULL,filter=NULL){
   #export mean and covariance for each biomarker
     mcov = list(means=as.data.frame(apply(train[,biomarkers],2,mean,na.rm=TRUE)),
                 cov = cov(train[,biomarkers],use='pairwise.complete.obs'))
-  } else{
-  mcov = fit
-}
+
+    fit = list(mcov=mcov,nobs=nrow(train),filter=filter)
+
+  }
+
+  mcov = fit$mcov
 
   #step 3: transform projection dataset into z-scores based on standardized
   #        training data
@@ -78,7 +81,8 @@ hd = function(data,biomarkers,fit=NULL,filter=NULL){
   #step 5: log distance & standardize
   data$hd = scale(log(data$raw_dist))
 
-  hd = list(data=data,fit=mcov)
+
+  hd = list(data=data,fit=fit)
   class(hd) = append(class(hd),'hd')
 
   return(hd)
