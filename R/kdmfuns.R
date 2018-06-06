@@ -326,3 +326,36 @@ extract_data.kdm = function(kdmobj){
   return(kdmobj$data)
 
 }
+
+
+#' Project from a training dataset into a validation dataset using kdm or hd algorithms.
+#'
+#' @param training_data The dataset for calculating biological age or hd.
+#' @param projection_data The dataset for projecting biological age or hd into.
+#' @param method A character variable of either 'hd' or 'kdm' to identify the
+#' @param biomarkers A character vector indicating the names of the variables for the biomarkers to use in calculating biological age.
+#' @param filter a list with biomarker names that identifies any restrictions in training data. See vignette or data description for example of use.
+#' @return An object of class 'kdm' or 'hd'. This object is a list with two elements (data and fit),
+#' and two methods (extract_data and extract_fit). Data is limited to the "projection" dataset. Fit is calculate from "training" dataset.
+#' @examples
+#' #(not run)
+#' #Train biological age parameters
+#' ndata = project(training_data=nhanes,projection_data=holdout,
+#'                 agevar='age',
+#'                 biomarkers=c('sysbp','totchol','bun','cmv','mcv'))
+#'
+project = function(training_data,
+                   projection_data,
+                   method,
+                   biomarkers,
+                   filter=NULL,
+                   ...){
+
+  args=list(...)
+  args=c(args,list(data=training_data))
+
+  trained = do.call(eval(method),args)
+
+#  return(trained)
+
+}
