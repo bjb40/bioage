@@ -1,6 +1,6 @@
 #functions for building and manipulationg KDM algorithm
 
-
+hd
 #builds a fomula on the fly
 form = function(y,x){
   return(as.formula(paste0(y,'~',x)))
@@ -114,7 +114,7 @@ kdm_calc = function(data,
 
     if(is.null(filter[[l]])){next} else{
       lim=with(train,eval(parse(text=filter[[l]])))
-      train2[lim,names(filter)] = NA
+      train2[lim,names(filter)[l]] = NA
     }
 
   }
@@ -208,11 +208,11 @@ kdm_calc = function(data,
 
 
   #use prevous sba2 --- can add an if above...
-  if(!is.null(fit)){
-    cat('\n\nold sba2=',s_ba2,'\n')
-    s_ba2 = fit[['s_ba2']]
-    cat('\n new sba2=',s_ba2,'\n')
-  }
+#  if(!is.null(fit)){
+#    cat('\n\nold sba2=',s_ba2,'\n')
+#    s_ba2 = fit[['s_ba2']]
+#    cat('\n new sba2=',s_ba2,'\n')
+#  }
 
   #cat('sba2',s_ba2,'\n')
 
@@ -231,15 +231,24 @@ kdm_calc = function(data,
 
   fit = list(agev=agev,s_r=s_r,link=link,s_ba2=s_ba2,s2=s2,nobs=nobs)
 
-  train$ba.e_n = ba.e_n
-  train$ba.e_d = ba.e_d
+  #train$ba.e_n = ba.e_n
+  #train$ba.e_d = ba.e_d
 
   #rename to bio__
   colnames(train)[which(colnames(train)=='bioage')] = paste0('bio',agevar)
+  train$baaccel_diff = unlist(train[,paste0('bio',agevar)] - train[,agevar])
+  train$baaccel_resid = residuals(
+    lm(form(paste0('bio',agevar),agevar),
+       data=train,
+       na.action='na.exclude')
+    )
 
-  train$s_r = s_r
-  train$s2 = s2
-  train$s_ba2 = s_ba2
+
+
+
+  #train$s_r = s_r
+  #train$s2 = s2
+  #train$s_ba2 = s_ba2
 
   kdm = list(data = train, fit = fit)
   class(kdm) = append(class(kdm),'kdm')
@@ -300,6 +309,15 @@ extract_data = function(kdmobj){
 extract_data.default = function(kdmobj){
   cat('\nError: Must use kdm object generated from kdm_calc.')
 }
+
+extract_data.hd = function(kdmobj){
+  #kdmobj is  trained set
+  #returns dataframe and prints to csv
+
+  return(kdmobj$data)
+
+}
+
 
 extract_data.kdm = function(kdmobj){
   #kdmobj is  trained set
