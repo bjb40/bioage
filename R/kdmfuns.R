@@ -344,18 +344,27 @@ extract_data.kdm = function(kdmobj){
 #'                 agevar='age',
 #'                 biomarkers=c('sysbp','totchol','bun','cmv','mcv'))
 #'
+#' @export
 project = function(training_data,
                    projection_data,
-                   method,
+                   method='hd',
                    biomarkers,
-                   filter=NULL,
                    ...){
 
-  args=list(...)
-  args=c(args,list(data=training_data))
+  #change so it works okay
+  if(method == 'kdm'){method='kdm_calc'}
 
-  trained = do.call(eval(method),args)
+  args=list(biomarkers=biomarkers,
+            data=training_data,
+            ...)
 
-#  return(trained)
+  res = do.call(eval(method),args)
+
+  args[['data']] = projection_data
+  args[['fit']] = res$fit
+
+  res = do.call(eval(method),args)
+
+  return(res)
 
 }

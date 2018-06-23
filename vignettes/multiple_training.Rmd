@@ -1,0 +1,148 @@
+---
+title: "Using NHANES to Train and Project into Duke EPESE"
+author: "Bryce Bartlett"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\Using NHANES to Train and Project into Duke EPESE{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message=FALSE)
+```
+
+## Dataset identification and subsetting.
+
+In this vignette, I use a previously subset version of the NHANES with particular biomarkers, which includes individuals 30 to 75 years old, and excludes pregnant women.
+
+The projection dataset is the Duke Established Populations for Epidemiologic Studies of the Elderly (EPESE), which has identical biomarkers, and was previously cleanded/loaded.
+
+```{r}
+library(dplyr)
+library(bioage) #beta version currently -- topic of vignette
+```
+
+```{r, echo=FALSE}
+#This codeblock loads data from my local machine that has previously been downloaded and cleane. The Original data is not available.
+library(haven)
+nhanes = read_dta('C:/Users/bjb40/Box Sync/Bartlett_BioAge/Data/nhanes/Stata/NHANESforBA.dta')
+
+##limit by excluding pregnant woman and constraining the ages
+nhanes = nhanes %>%
+  filter(pregnant==0) %>%
+  mutate(seqn=ifelse(samp=='nhanes3',paste0('33333',seqn),seqn)) #eliminate duplicate sequence numbers
+
+#load epese
+load("C:/Users/bjb40/Box Sync/Bartlett_BioAge/EPESE/cleaned_epese.RData")
+
+```
+
+## Projecting homeostatic disregulation values into the EPESE using NHANES (separate training for gender).
+
+For homeostatic disregulation, the constructed varialbe is based on a malhanobis distance statistic, which is theoretically the distance between observations and a hypothetically healthy, young cohort.
+
+The "filter" argument is how the "healthy" restrictions are input. In this example, we train separately for men and women who are between the ages of 20 and 30, and have observe biomarker data within clinically accpetable distributions.
+
+The table below identifies the sex-specific restrictions base on clinical guidelines, and the variables in the nhanes dataset. For clinical guidelines, we relied upon the ranges reported by the Mayo Clinic website (http://www.mayomedicallaboratories.com/test-catalog/Clinical+and+Interpretive/8340)[http://www.mayomedicallaboratories.com/test-catalog/Clinical+and+Interpretive/8340] (last vistited May 28, 2018).
+
+|Variable|Description|Female Healthy Range| Male Healthy Range|
+|:-------|:----------|:---------------------------|:-----------|
+|seqn|Unique individual identifier||
+|sex|gender (1=female; 2=male)||
+|**Biomarkers**||
+|albumin|Albumin (g/DL)|3.5-5|3.5-5|
+|lnalp|Alkaline Phosphate (log U/L)|log(37)-log(98)|log(45)-log(115)|
+|bun|Blood Urea Nitrogen|6-21|8-24|
+|lncreat|Creatinine (log)|log(0.6)-log(1.1)|log(0.8)-log(1.3)|
+|lncrp| CRP (log) |< log(2) |< log(2) |
+|hba1c|Glycalated Hemoglobin (%)|4-5.6|4-5.6|
+|lymphpct|Lymphocite Percent | 20-40 | 20-40 |
+|lnwbc|White Blood Cell Count (log)| log(4.5) - log(11) | log(4.5) - log(11) |
+|lnua|Uric Acid (log)| log(2.7) - log(6.3) | log(3.7) - log(8.0) |
+|sbp|Systolic Blood Pressure| < 120 | < 120 |
+|totchol|Total Cholesterol| <200 | <200 |
+
+
+```{r}
+biomarkers = c('albumin','lnalp','bun','lncrp',
+               'hba1c','lymphpct','lnwbc',
+               'lnua','sbp','totchol')
+filter.female = list(
+              albumin='albumin>=3.5 & albumin<=5',
+              lnalp = 'exp(lnalp)>=37 & exp(lnalp)<=98',
+              bun = 'bun>=6 & bun<=21',
+              lncrp = 'exp(lncrp)<2',
+              hba1c = 'hba1c>=4 & hba1c<=5.6',
+              lymphpct = 'lymphpct>=20 & lymphpct<=40',
+              lnwbc = 'exp(lnwbc)>=4.5 & exp(lnwbc)<=11',
+              lnua = 'exp(lnua)>=2.7 & exp(lnua)<=6.3',
+              sbp = 'sbp<120',
+              totchol = 'totchol<200'
+              )
+
+hd.train = nhanes %>% filter(age>=20 & age<=30)
+
+#5 std dev from mean
+
+project1 = project(training_data = hd.train,
+                   projection_data = epese,
+                   biomarkers=biomarkers,
+                   method='hd',
+                   filter=filter.female)
+
+#need to fix extraction -- 
+epese = extract_data(project1)
+epese$hd = as.vector(epese$hd)
+
+project1 = project(training_data = nhanes,
+                   projection_data = epese,
+                   method='kdm',
+                   biomarkers = biomarkers,
+                   agevar = 'age',
+                   filter=list(albumin='age>=45',
+                                  lymphpct='age>=45',
+                                  totchol='age>=30 & age<=55'))
+                   
+
+
+hdtrain.female = hd(nhanes %>% filter(age>=20 & age<=30 & sex ==1),
+            biomarkers=biomarkers,
+            filter=filter.female)
+
+tst = extract_data(project1)
+
+#train male by substiting differences from female filter
+filter.male = filter.female
+filter.male$lnalp = 'exp(lnalp)>=45 & exp(lnalp) >=115'
+filter.male$bun = 'bun>=8 & bun<=24'
+filter.male$lncreat = 'exp(lncreat)>=0.8 & lncreat<=1.3'
+filter.male$lnua = 'exp(lnua)>=3.7 & exp(lnua)<=8'
+
+hdtrain.male = hd(nhanes %>% filter(age>=20 & age<=30 & sex ==2),
+            biomarkers=biomarkers,
+            filter=filter.male)
+
+
+```
+
+Having calculated the training data, we can project homeostatic disregulation into out-of-sample data (i.e. the full dataset).
+
+```{r}
+hdvalidate.female = hd(nhanes %>% filter(sex==1),
+                       biomarkers=biomarkers,
+                       fit=hdtrain.female$fit)
+
+hdvalidate.male = hd(nhanes %>% filter(sex==2),
+                     biomarkers=biomarkers,
+                     fit=hdtrain.male$fit)
+
+hdvalidate = rbind(hdvalidate.female$data,hdvalidate.male$data)
+
+plot(hdvalidate[,c('age','hd')])
+cor(hdvalidate[,c('age','hd')],use='pairwise.complete.obs')
+
+```
+
+
